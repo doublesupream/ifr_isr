@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FISCAL_YEARS, THAI_MONTHS, type MonthRow } from "@/lib/ifrisr-data";
+import { THAI_MONTHS, type MonthRow } from "@/lib/ifrisr-data";
 import { KpiCard } from "@/components/kpi-card";
 import {
   IfrLineChart,
@@ -15,11 +15,11 @@ import { ShieldCheck, CalendarDays, AlertTriangle, Info, RefreshCw } from "lucid
 
 type Group = "all" | "emp" | "lab";
 
-const FY_LABELS: Record<number, string> = {
-  2568: "ปีงบประมาณ 2568 (ต.ค. 67 – ก.ย. 68)",
-  2569: "ปีงบประมาณ 2569 (ต.ค. 68 – ก.ย. 69)",
-  2570: "ปีงบประมาณ 2570 (ต.ค. 69 – ก.ย. 70)",
-};
+function fyLabel(fy: number): string {
+  const start2 = fy - 2501; // เช่น 2568 → 67
+  const end2 = fy - 2500; // เช่น 2568 → 68
+  return `ปีงบประมาณ ${fy} (ต.ค. ${start2} – ก.ย. ${end2})`;
+}
 
 interface DashboardProps {
   /** ข้อมูลรายเดือนที่โหลดจาก Google Sheet (หรือ static หากโหลดไม่สำเร็จ) */
@@ -31,10 +31,23 @@ interface DashboardProps {
 }
 
 export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
-  const [fy, setFy] = useState<number>(2568);
+  // ปีงบประมาณที่มีข้อมูลจริงในชีต (จะอัปเดตเองเมื่อชีตเพิ่มปีใหม่ เช่น 2571)
+  const years = useMemo(
+    () => Array.from(new Set(data.map((d) => d.fiscalYear))).sort((a, b) => a - b),
+    [data],
+  );
+
+  const [fy, setFy] = useState<number>(years[0] ?? 2568);
   const [group, setGroup] = useState<Group>("all");
   const router = useRouter();
   const [isRefreshing, startTransition] = useTransition();
+
+  // ถ้าปีที่เลือกไม่มีอยู่ในข้อมูลแล้ว (เช่น ชีตเปลี่ยน) ให้กระโดดไปปีล่าสุด
+  useEffect(() => {
+    if (years.length > 0 && !years.includes(fy)) {
+      setFy(years[years.length - 1]);
+    }
+  }, [years, fy]);
 
   const handleRefresh = () => {
     startTransition(() => {
@@ -134,23 +147,22 @@ export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-sm font-medium text-slate-600">ปีงบประมาณ:</label>
-            <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-              {FISCAL_YEARS.map((y) => (
-                <button
-                  key={y}
-                  onClick={() => setFy(y)}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                    fy === y
-                      ? "bg-blue-600 text-white shadow"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {y}
-                </button>
-              ))}
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white shadow-sm">
+              <select
+                aria-label="ปีงบประมาณ"
+                value={fy}
+                onChange={(e) => setFy(Number(e.target.value))}
+                className="rounded-lg bg-transparent px-3 py-1.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
             </div>
             <span className="hidden text-xs text-slate-400 md:inline">
-              {FY_LABELS[fy]}
+              {fyLabel(fy)}
             </span>
           </div>
 
