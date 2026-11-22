@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { FISCAL_YEARS, THAI_MONTHS, type MonthRow } from "@/lib/ifrisr-data";
 import { KpiCard } from "@/components/kpi-card";
 import {
@@ -10,7 +11,7 @@ import {
   LostDaysBarChart,
 } from "@/components/charts";
 import { DataTable } from "@/components/data-table";
-import { ShieldCheck, CalendarDays, AlertTriangle, Info } from "lucide-react";
+import { ShieldCheck, CalendarDays, AlertTriangle, Info, RefreshCw } from "lucide-react";
 
 type Group = "all" | "emp" | "lab";
 
@@ -25,11 +26,21 @@ interface DashboardProps {
   data: MonthRow[];
   /** true = ดึงสดจาก Google Sheet, false = ใช้ข้อมูล static */
   live: boolean;
+  /** เวลาที่ดึงข้อมูลล่าสุด (แสดงบนหน้าเว็บ) */
+  fetchedAt: string;
 }
 
-export function Dashboard({ data, live }: DashboardProps) {
+export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
   const [fy, setFy] = useState<number>(2568);
   const [group, setGroup] = useState<Group>("all");
+  const router = useRouter();
+  const [isRefreshing, startTransition] = useTransition();
+
+  const handleRefresh = () => {
+    startTransition(() => {
+      router.refresh();
+    });
+  };
 
   const rows = useMemo(
     () => data.filter((r) => r.fiscalYear === fy),
@@ -100,9 +111,20 @@ export function Dashboard({ data, live }: DashboardProps) {
               </p>
             </div>
           </div>
-          <div className="hidden items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-600 sm:flex">
-            <CalendarDays className="h-4 w-4" />
-            <span>ปีงบประมาณ ต.ค. – ก.ย.</span>
+          <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-600 sm:flex">
+              <CalendarDays className="h-4 w-4" />
+              <span>ปีงบประมาณ ต.ค. – ก.ย.</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>{isRefreshing ? "กำลังโหลด..." : "รีเฟรช"}</span>
+            </button>
           </div>
         </div>
       </header>
@@ -157,7 +179,7 @@ export function Dashboard({ data, live }: DashboardProps) {
         </div>
 
         {/* Data source badge */}
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
               live
@@ -168,6 +190,7 @@ export function Dashboard({ data, live }: DashboardProps) {
             <span className={`h-1.5 w-1.5 rounded-full ${live ? "bg-emerald-500" : "bg-amber-500"}`} />
             {live ? "ข้อมูลสดจาก Google Sheet" : "ใช้ข้อมูลสำรอง (โหลดจาก Sheet ไม่สำเร็จ)"}
           </span>
+          <span className="text-xs text-slate-400">อัปเดตล่าสุด {fetchedAt}</span>
         </div>
 
         {/* KPI cards */}
