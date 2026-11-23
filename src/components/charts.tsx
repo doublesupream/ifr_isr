@@ -50,6 +50,20 @@ function sanitizeRate(v: number | null): number | null {
 }
 
 /**
+ * ปัดจำนวนขึ้นไปหา "เลขกลม ๆ" (1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10 × 10^n)
+ * เพื่อไม่ให้ tick บนแกน Y เป็นเลขทศนิยมยาว ๆ เช่น 2.7369999999999997
+ */
+function niceCeil(value: number): number {
+  if (value <= 0) return 1;
+  const exp = Math.floor(Math.log10(value));
+  const mag = Math.pow(10, exp);
+  const norm = value / mag;
+  const steps = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+  const niceNorm = steps.find((s) => s >= norm - 1e-9) ?? 10;
+  return niceNorm * mag;
+}
+
+/**
  * คำนวณช่วงแกน Y ให้ครอบคลุมทั้งข้อมูลและเส้นเป้าเสมอ
  * กันไม่ให้เส้นเป้าหายไปในปีที่ข้อมูลเป็นศูนย์หรือว่าง (เช่น 2569, 2570)
  * และกันไม่ให้ค่าผิดปกติ (sentinel) ดันแกน Y ให้พุ่งเป็นล้านล้าน
@@ -64,8 +78,8 @@ function computeYDomain(
     if (clean === null) continue;
     max = Math.max(max, clean);
   }
-  // เผื่อพื้นที่ด้านบนให้เส้นเป้าและป้ายบอกตัวเลขไม่ถูกตัดขอบ
-  const upper = max > 0 ? max * 1.15 : 1;
+  // เผื่อพื้นที่ด้านบน แล้วปัดเป็นเลขกลม ๆ กันป้าย/เส้นเป้าติดขอบ
+  const upper = niceCeil(max * 1.1);
   return [0, upper];
 }
 
