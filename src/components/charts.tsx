@@ -37,8 +37,22 @@ const MONTH_LABELS = [
 ];
 
 /**
+ * ค่าที่เป็น IFR/ISR ได้จริงมีขนาดประมาณ 0–100 เท่านั้น
+ * ถ้าเจอค่าที่ใหญ่เกินกว่านี้ (เช่น sentinel 9999999997 ที่ใครใส่ในชีตมาแทน "ไม่มีข้อมูล")
+ * ให้ถือว่าเป็นค่าผิดปกติและตัดเป็น null กันกราฟพัง
+ */
+const ABSURD_RATE = 1_000_000;
+
+function sanitizeRate(v: number | null): number | null {
+  if (v === null || !Number.isFinite(v)) return null;
+  if (v < 0 || v > ABSURD_RATE) return null;
+  return v;
+}
+
+/**
  * คำนวณช่วงแกน Y ให้ครอบคลุมทั้งข้อมูลและเส้นเป้าเสมอ
  * กันไม่ให้เส้นเป้าหายไปในปีที่ข้อมูลเป็นศูนย์หรือว่าง (เช่น 2569, 2570)
+ * และกันไม่ให้ค่าผิดปกติ (sentinel) ดันแกน Y ให้พุ่งเป็นล้านล้าน
  */
 function computeYDomain(
   values: Array<number | null>,
@@ -46,9 +60,9 @@ function computeYDomain(
 ): [number, number] {
   let max = target;
   for (const v of values) {
-    if (v !== null && Number.isFinite(v)) {
-      max = Math.max(max, v);
-    }
+    const clean = sanitizeRate(v);
+    if (clean === null) continue;
+    max = Math.max(max, clean);
   }
   // เผื่อพื้นที่ด้านบนให้เส้นเป้าและป้ายบอกตัวเลขไม่ถูกตัดขอบ
   const upper = max > 0 ? max * 1.15 : 1;
@@ -76,9 +90,9 @@ function TargetReferenceLine({ y, text }: { y: number; text: string }) {
 export function IfrLineChart({ data, target = 2.38 }: ChartProps) {
   const chart = data.map((d) => ({
     label: MONTH_LABELS[d.monthIndex],
-    IFR: d.ifr,
-    IFREmp: d.ifrEmp,
-    IFRLab: d.ifrLab,
+    IFR: sanitizeRate(d.ifr),
+    IFREmp: sanitizeRate(d.ifrEmp),
+    IFRLab: sanitizeRate(d.ifrLab),
   }));
   const yDomain = computeYDomain(
     chart.flatMap((d) => [d.IFR, d.IFREmp, d.IFRLab]),
@@ -145,9 +159,9 @@ export function IfrLineChart({ data, target = 2.38 }: ChartProps) {
 export function IsrLineChart({ data, target = 5.95 }: ChartProps) {
   const chart = data.map((d) => ({
     label: MONTH_LABELS[d.monthIndex],
-    ISR: d.isr,
-    ISREmp: d.isrEmp,
-    ISRLab: d.isrLab,
+    ISR: sanitizeRate(d.isr),
+    ISREmp: sanitizeRate(d.isrEmp),
+    ISRLab: sanitizeRate(d.isrLab),
   }));
   const yDomain = computeYDomain(
     chart.flatMap((d) => [d.ISR, d.ISREmp, d.ISRLab]),
