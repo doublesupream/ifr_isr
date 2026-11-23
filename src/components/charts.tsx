@@ -36,6 +36,25 @@ const MONTH_LABELS = [
   "ก.ย.",
 ];
 
+/**
+ * คำนวณช่วงแกน Y ให้ครอบคลุมทั้งข้อมูลและเส้นเป้าเสมอ
+ * กันไม่ให้เส้นเป้าหายไปในปีที่ข้อมูลเป็นศูนย์หรือว่าง (เช่น 2569, 2570)
+ */
+function computeYDomain(
+  values: Array<number | null>,
+  target: number,
+): [number, number] {
+  let max = target;
+  for (const v of values) {
+    if (v !== null && Number.isFinite(v)) {
+      max = Math.max(max, v);
+    }
+  }
+  // เผื่อพื้นที่ด้านบนให้เส้นเป้าและป้ายบอกตัวเลขไม่ถูกตัดขอบ
+  const upper = max > 0 ? max * 1.15 : 1;
+  return [0, upper];
+}
+
 /** เส้นเป้า (Target) พร้อมป้ายบอกตัวเลขบนกราฟ */
 function TargetReferenceLine({ y, text }: { y: number; text: string }) {
   return (
@@ -61,6 +80,10 @@ export function IfrLineChart({ data, target = 2.38 }: ChartProps) {
     IFREmp: d.ifrEmp,
     IFRLab: d.ifrLab,
   }));
+  const yDomain = computeYDomain(
+    chart.flatMap((d) => [d.IFR, d.IFREmp, d.IFRLab]),
+    target,
+  );
 
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -76,7 +99,7 @@ export function IfrLineChart({ data, target = 2.38 }: ChartProps) {
         <LineChart data={chart} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} />
-          <YAxis tick={{ fontSize: 11, fill: "#64748b" }} />
+          <YAxis domain={yDomain} tick={{ fontSize: 11, fill: "#64748b" }} />
           <Tooltip
             contentStyle={{
               borderRadius: 8,
@@ -126,6 +149,10 @@ export function IsrLineChart({ data, target = 5.95 }: ChartProps) {
     ISREmp: d.isrEmp,
     ISRLab: d.isrLab,
   }));
+  const yDomain = computeYDomain(
+    chart.flatMap((d) => [d.ISR, d.ISREmp, d.ISRLab]),
+    target,
+  );
 
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -139,7 +166,7 @@ export function IsrLineChart({ data, target = 5.95 }: ChartProps) {
         <LineChart data={chart} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} />
-          <YAxis tick={{ fontSize: 11, fill: "#64748b" }} />
+          <YAxis domain={yDomain} tick={{ fontSize: 11, fill: "#64748b" }} />
           <Tooltip
             contentStyle={{
               borderRadius: 8,
