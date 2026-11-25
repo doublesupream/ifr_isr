@@ -125,7 +125,9 @@ export function parseSheetCsv(csv: string): MonthRow[] {
  */
 export async function loadMonthRows(): Promise<{ rows: MonthRow[]; live: boolean }> {
   try {
-    const csv = await fetchSheetCsv(SHEET_CSV_URL);
+    // ใส่ cache-buster (พารามิเตอร์เวลา) เพื่อบังคับดึงสดจากชีตทุกครั้ง
+    // กันไม่ให้ Google/พร็อกซีเสิร์ฟ CSV เก่าที่ cache ไว้
+    const csv = await fetchSheetCsv(`${SHEET_CSV_URL}&_=${Date.now()}`);
     const rows = parseSheetCsv(csv);
     if (rows.length === 0) {
       throw new Error("No rows parsed from sheet CSV");
