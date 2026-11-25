@@ -60,6 +60,11 @@ export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
     [data, fy],
   );
 
+  // ค่าเป้าหมาย IFR/ISR ของปีงบประมาณที่เลือก — อ่านจาก Google Sheet (targetIfr/targetIsr)
+  // แต่ละปีงบประมาณอาจมีค่าเป้าไม่เท่ากัน จึงต้องดึงตามปีที่เลือก ไม่ใช้ ค่าคงที่
+  const targetIfr = rows.find((r) => Number.isFinite(r.targetIfr))?.targetIfr ?? 2.38;
+  const targetIsr = rows.find((r) => Number.isFinite(r.targetIsr))?.targetIsr ?? 5.95;
+
   // Latest row with data
   const latest = useMemo(() => {
     for (let i = rows.length - 1; i >= 0; i--) {
@@ -210,14 +215,14 @@ export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
           <KpiCard
             title="IFR (ล่าสุด)"
             value={ifrVal}
-            target={2.38}
+            target={targetIfr}
             compareTo={ifrPrev}
             invertColor
           />
           <KpiCard
             title="ISR (ล่าสุด)"
             value={isrVal}
-            target={5.95}
+            target={targetIsr}
             compareTo={isrPrev}
             invertColor
           />
@@ -241,8 +246,8 @@ export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
 
         {/* Charts */}
         <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <IfrLineChart data={rows} target={2.38} />
-          <IsrLineChart data={rows} target={5.95} />
+          <IfrLineChart data={rows} target={targetIfr} />
+          <IsrLineChart data={rows} target={targetIsr} />
           <InjuriesBarChart data={rows} />
           <LostDaysBarChart data={rows} />
         </div>
@@ -261,8 +266,8 @@ export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
                   <span className="font-semibold">
                     {ifrVal !== null ? ifrVal.toFixed(2) : "—"}
                   </span>{" "}
-                  {ifrVal !== null && ifrVal > 2.38 ? (
-                    <span className="font-semibold text-rose-600">(เกินเป้า 2.38)</span>
+                  {ifrVal !== null && ifrVal > targetIfr ? (
+                    <span className="font-semibold text-rose-600">(เกินเป้า {targetIfr})</span>
                   ) : (
                     <span className="font-semibold text-emerald-600">(ถูกเป้า)</span>
                   )}
@@ -270,8 +275,8 @@ export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
                   <span className="font-semibold">
                     {isrVal !== null ? isrVal.toFixed(2) : "—"}
                   </span>{" "}
-                  {isrVal !== null && isrVal > 5.95 ? (
-                    <span className="font-semibold text-rose-600">(เกินเป้า 5.95)</span>
+                  {isrVal !== null && isrVal > targetIsr ? (
+                    <span className="font-semibold text-rose-600">(เกินเป้า {targetIsr})</span>
                   ) : (
                     <span className="font-semibold text-emerald-600">(ถูกเป้า)</span>
                   )}
