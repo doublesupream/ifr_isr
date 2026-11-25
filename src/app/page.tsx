@@ -7,9 +7,14 @@ async function DashboardData() {
   // รอเชื่อมต่อ request เพื่อให้ render ข้อมูลสดตอน request (รองรับ cacheComponents)
   await connection();
   const { rows, live } = await loadMonthRows();
-  const fetchedAt = new Date().toLocaleTimeString("th-TH", {
+  const fetchedAt = new Date().toLocaleString("th-TH", {
+    timeZone: "Asia/Bangkok", // บังคับเวลาไทย (Vercel ใช้ UTC อยู่แล้ว)
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
   return <Dashboard data={rows} live={live} fetchedAt={fetchedAt} />;
 }
