@@ -37,12 +37,15 @@ function IfrBadge({ value, target }: { value: number | null; target: number }) {
 }
 
 export function DataTable({ data }: DataTableProps) {
+  const targetIfr = data.find((d) => Number.isFinite(d.targetIfr))?.targetIfr ?? 2.38;
+  const targetIsr = data.find((d) => Number.isFinite(d.targetIsr))?.targetIsr ?? 5.95;
+
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
       <div className="border-b border-slate-200 px-5 py-4">
         <h3 className="text-base font-semibold text-slate-800">ตารางข้อมูลรายเดือน</h3>
         <p className="text-xs text-slate-500">
-          ค่า IFR/ISR คำนวณจากยอดสะสม · เป้า IFR ≤ 2.38 / ISR ≤ 5.95
+          ค่า IFR/ISR คำนวณจากยอดสะสม · เป้า IFR ≤ {targetIfr} / ISR ≤ {targetIsr}
         </p>
       </div>
       <div className="overflow-x-auto">
