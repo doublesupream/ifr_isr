@@ -207,7 +207,9 @@ export function Dashboard({ data, live, fetchedAt }: DashboardProps) {
             <span className={`h-1.5 w-1.5 rounded-full ${live ? "bg-emerald-500" : "bg-amber-500"}`} />
             {live ? "ข้อมูลสดจาก Google Sheet" : "ใช้ข้อมูลสำรอง (โหลดจาก Sheet ไม่สำเร็จ)"}
           </span>
-          <span className="text-xs text-slate-400">อัปเดตล่าสุด {fetchedAt}</span>
+          <span className="text-xs text-slate-400">
+            โหลดข้อมูลเมื่อ {fetchedAt} (เวลาไทย)
+          </span>
         </div>
 
         {/* KPI cards */}
